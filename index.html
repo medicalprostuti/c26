@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>কেমিস্ট্রি ১ম অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question:
+            "নিচের কোন অক্সাইড পানিতে মিশালে সবচেয়ে বেশি অম্লীয় দ্রবণ তৈরি করে?",
+          options: {
+            a: "CO",
+            b: "SiO₂",
+            c: "P₂O₅",
+            d: "CO₂",
+          },
+          correct: "c",
+          explanation:
+            "<p>অক্সাইডগুলোর অম্লীয়তা পর্যায় সারণিতে বাম থেকে ডানে এবং উপর থেকে নিচে হ্রাস পায়। ফসফরাস পেন্টক্সাইড (P₂O₅) একটি অধাতব অক্সাইড, যা পানিতে মিশ্রিত হলে ফসফরিক অ্যাসিড (H₃PO₄) উৎপন্ন করে। P₂O₅ + 3H₂O → 2H₃PO₄। এটি অত্যন্ত শক্তিশালী একটি অ্যাসিড, যা কার্বন মনোক্সাইড (CO) (নিরপেক্ষ), সিলিকন ডাইঅক্সাইড (SiO₂) (দুর্বল অম্লীয়), এবং কার্বন ডাইঅক্সাইড (CO₂) (দুর্বল অম্লীয়) এর চেয়ে বেশি অম্লীয় দ্রবণ তৈরি করে।</p>",
+        },
+        {
+          id: 2,
+          question: "নিচের কোনটি সুপার অক্সাইড?",
+          options: {
+            a: "KO₂",
+            b: "Na₂O₂",
+            c: "Pb₃O₄",
+            d: "MnO₂",
+          },
+          correct: "a",
+          explanation:
+            '<p>সুপার অক্সাইড হলো এমন যৌগ যেখানে অক্সিজেন <span class="math-inline">-1/2</span> জারণ অবস্থায় থাকে এবং <span class="math-inline">O₂⁻</span> আয়ন বিদ্যমান। পটাশিয়াম সুপার অক্সাইড (KO₂) এই ধরনের একটি যৌগ। Na₂O₂ হল পারক্সাইড, যেখানে অক্সিজেনের জারণ অবস্থা -1। Pb₃O₄ এবং MnO₂ সাধারণ অক্সাইড।</p>',
+        },
+        {
+          id: 3,
+          question: "নিচের কোন ‘হাইড্রক্সাইড’টি অম্ল ধর্মীয়?",
+          options: {
+            a: "B(OH)₃",
+            b: "Mg(OH)₂",
+            c: "Zn(OH)₂",
+            d: "Ga(OH)₃",
+          },
+          correct: "a",
+          explanation:
+            "<p>বোরনের হাইড্রোক্সাইড, B(OH)₃, যা বোরিক অ্যাসিড নামে পরিচিত, একটি দুর্বল অম্ল। বোরন একটি ছোট আকারের মৌল এবং এর উচ্চ চার্জ ঘনত্ব থাকায় এটি হাইড্রোক্সিল গ্রুপ থেকে ইলেকট্রন টেনে নেয়, যার ফলে H⁺ আয়ন মুক্ত হয়। অন্যদিকে, Mg(OH)₂ ক্ষারীয়, Zn(OH)₂ উভধর্মী এবং Ga(OH)₃ও উভধর্মী প্রকৃতির।</p>",
+        },
+        {
+          id: 4,
+          question: "নিচের কোনটি অর্ধপরিবাহী নয়?",
+          options: {
+            a: "গ্যালিয়াম আরসেনাইট",
+            b: "সিলিকন",
+            c: "আরজেনটাম",
+            d: "জারমেনিয়াম",
+          },
+          correct: "c",
+          explanation:
+            "<p>আর্জেনটাম (Argentum), যা রূপা (Ag) নামে পরিচিত, একটি ধাতু এবং এটি একটি চমৎকার বিদ্যুৎ পরিবাহী, অর্ধপরিবাহী নয়। গ্যালিয়াম আর্সেনাইড (GaAs), সিলিকন (Si) এবং জার্মেনিয়াম (Ge) সবই সুপরিচিত অর্ধপরিবাহী, যা ইলেকট্রনিক শিল্পে ব্যাপকভাবে ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 5,
+          question: "নিচের কোনটি জারক ও বিজারক উভয় হিসাবেই কাজ করে?",
+          options: {
+            a: "nitrogen peroxide",
+            b: "nitric acid",
+            c: "ammonia",
+            d: "nitrous acid",
+          },
+          correct: "d",
+          explanation:
+            "<p>নাইট্রাস অ্যাসিড (HNO₂) এর নাইট্রোজেন পরমাণুর জারণ অবস্থা +3, যা তার সর্বনিম্ন জারণ অবস্থা (নাইট্রাইড, -3) এবং সর্বোচ্চ জারণ অবস্থা (নাইট্রিক অ্যাসিড, +5) এর মাঝামাঝি। এই কারণে, এটি ইলেকট্রন গ্রহণ করে (জারক হিসেবে) এবং ইলেকট্রন ত্যাগ করে (বিজারক হিসেবে) উভয় কাজই করতে পারে।</p>",
+        },
+        {
+          id: 6,
+          question:
+            "হীরক ও গ্রাফাইট হলো কার্বন মৌলের বহুরূপ। এদের ক্ষেত্রে কোন উক্তিটি সত্য নয়?",
+          options: {
+            a: "উভয়েই কার্বন দ্বারা গঠিত",
+            b: "হীরক ও গ্রাফাইট যথাক্রমে sp³ ও sp² সংকরিত",
+            c: "উভয়ের দহন তাপ একই",
+            d: "উভয়ের বিদ্যুৎ পরিবাহিতা ভিন্ন",
+          },
+          correct: "c",
+          explanation:
+            "<p>হীরক এবং গ্রাফাইট উভয়ই কার্বন দ্বারা গঠিত হলেও, তাদের পারমাণবিক গঠন এবং বন্ধন ভিন্ন। হীরকে কার্বন পরমাণুগুলো sp³ সংকরিত এবং প্রতিটি কার্বন পরমাণু চারটি অন্য কার্বন পরমাণুর সাথে সংযুক্ত থাকে, যা একটি ত্রিমাত্রিক জালিকা গঠন করে। গ্রাফাইটে কার্বন পরমাণুগুলো sp² সংকরিত এবং ষড়ভুজাকার স্তরে বিন্যস্ত থাকে। এই ভিন্ন গঠনের কারণে তাদের দহন তাপ একই হয় না। তাদের বিদ্যুৎ পরিবাহিতা ভিন্ন (হীরক অপরিবাহী, গ্রাফাইট পরিবাহী)।</p>",
+        },
+        {
+          id: 7,
+          question: "অপটিক্যাল ফাইবারের প্রধান উপাদান কোনটি?",
+          options: {
+            a: "CaO",
+            b: "MgO",
+            c: "CuO",
+            d: "SiO₂",
+          },
+          correct: "d",
+          explanation:
+            "<p>অপটিক্যাল ফাইবারের প্রধান উপাদান হল সিলিকন ডাইঅক্সাইড (SiO₂), যা অতি বিশুদ্ধ সিলিকা গ্লাস নামেও পরিচিত। এর উচ্চ স্বচ্ছতা এবং আলোর প্রতিসরণের ক্ষমতা এটিকে ডেটা ট্রান্সমিশনের জন্য আদর্শ করে তোলে।</p>",
+        },
+        {
+          id: 8,
+          question: "নিচের কোনটির জারণ ক্ষমতা সবচেয়ে বেশি?",
+          options: {
+            a: "F₂",
+            b: "Cl₂",
+            c: "I₂",
+            d: "Br₂",
+          },
+          correct: "a",
+          explanation:
+            "<p>হ্যালোজেন গ্রুপের মধ্যে, ফ্লোরিন (F₂) সবচেয়ে শক্তিশালী জারক। পর্যায় সারণিতে একটি গ্রুপ বরাবর উপর থেকে নিচে গেলে মৌলগুলোর জারণ ক্ষমতা হ্রাস পায়। ফ্লোরিনের উচ্চ তড়িৎ ঋণাত্মকতা এবং ছোট আকার এটিকে ইলেকট্রন গ্রহণে অত্যন্ত সক্ষম করে তোলে, যার ফলে এর জারণ ক্ষমতা সবচেয়ে বেশি হয়।</p>",
+        },
+        {
+          id: 9,
+          question: "নিচের কোনটি সাধারণ অবস্থায় তরল?",
+          options: {
+            a: "F₂",
+            b: "Cl₂",
+            c: "Br₂",
+            d: "I₂",
+          },
+          correct: "c",
+          explanation:
+            "<p>সাধারণ তাপমাত্রা ও চাপে ব্রোমিন (Br₂) একমাত্র অধাতব মৌল যা তরল অবস্থায় থাকে। ফ্লোরিন (F₂) এবং ক্লোরিন (Cl₂) গ্যাসীয়, আর আয়োডিন (I₂) কঠিন অবস্থায় থাকে।</p>",
+        },
+        {
+          id: 10,
+          question: "নিচের কোনটি ক্যানসার চিকিৎসায় ব্যবহৃত হয়?",
+          options: {
+            a: "He",
+            b: "Ne",
+            c: "Ar",
+            d: "Rn",
+          },
+          correct: "d",
+          explanation:
+            "<p>রেডন (Rn) একটি তেজস্ক্রিয় নিষ্ক্রিয় গ্যাস, যা ক্যানসার চিকিৎসায়, বিশেষ করে রেডিয়েশন থেরাপিতে ব্যবহৃত হয়। এর তেজস্ক্রিয় ক্ষয় থেকে নির্গত আলফা কণা ক্যানসার কোষগুলোকে ধ্বংস করতে সাহায্য করে।</p>",
+        },
+        {
+          id: 11,
+          question: "কোনটি আর্সেনিকের রূপভেদ নয়?",
+          options: {
+            a: "ধূসর",
+            b: "কালো",
+            c: "হলুদ",
+            d: "সাদা",
+          },
+          correct: "d",
+          explanation:
+            "<p>আর্সেনিকের তিনটি প্রধান রূপভেদ হল ধূসর আর্সেনিক (সবচেয়ে স্থিতিশীল), হলুদ আর্সেনিক (কম স্থিতিশীল) এবং কালো আর্সেনিক। 'সাদা' আর্সেনিক আর্সেনিকের কোনো পরিচিত রূপভেদ নয়, তবে আর্সেনিক ট্রাইঅক্সাইড (As₂O₃) কে অনেক সময় সাদা আর্সেনিক বলা হয়, যা একটি যৌগ, মৌলের রূপভেদ নয়।</p>",
+        },
+        {
+          id: 12,
+          question: "ক্লোরিনের খনিজ উৎস নয় কোনটি?",
+          options: {
+            a: "সিলভাইন",
+            b: "ব্রাইন",
+            c: "কার্নালাইট",
+            d: "কায়ানাইট",
+          },
+          correct: "d",
+          explanation:
+            "<p>কায়ানাইট (Kyanite) একটি অ্যালুমিনোসিলিকেট খনিজ (Al₂SiO₅) এবং এটি ক্লোরিনের কোনো খনিজ উৎস নয়। সিলভাইন (KCl), ব্রাইন (NaCl এর জলীয় দ্রবণ) এবং কার্নালাইট (KCl·MgCl₂·6H₂O) সবই ক্লোরিনের গুরুত্বপূর্ণ প্রাকৃতিক উৎস।</p>",
+        },
+        {
+          id: 13,
+          question:
+            "সালফার সরাসরি কোনটি ছাড়া অন্য সব ধাতুর সাথে যুক্ত হতে পারে?",
+          options: {
+            a: "জিংক",
+            b: "প্লাটিনাম",
+            c: "লৌহ",
+            d: "রূপা",
+          },
+          correct: "b",
+          explanation:
+            "<p>সালফার সাধারণত বেশিরভাগ ধাতুর সাথে সরাসরি বিক্রিয়া করে সালফাইড তৈরি করে। তবে, প্ল্যাটিনাম (Pt) একটি অত্যন্ত নিষ্ক্রিয় ধাতু এবং এটি সাধারণত সাধারণ অবস্থায় সালফারের সাথে সরাসরি বিক্রিয়া করে না। জিংক (Zn), লৌহ (Fe) এবং রূপা (Ag) সালফারের সাথে সহজেই বিক্রিয়া করে।</p>",
+        },
+        {
+          id: 14,
+          question: "নিচের কোনটি পলি অক্সাইড?",
+          options: {
+            a: "SnO",
+            b: "P₂O₅",
+            c: "PbO₂",
+            d: "CaO",
+          },
+          correct: "c",
+          explanation: "–",
+        },
+        {
+          id: 15,
+          question: "কোনটি N₂O-এর ধর্ম নয়?",
+          options: {
+            a: "বর্ণহীন",
+            b: "অ্যালকোহলে দ্রবণীয়",
+            c: "শীতল পানিতে দ্রবণীয়",
+            d: "দুর্গন্ধময়",
+          },
+          correct: "d",
+          explanation:
+            "<p>নাইট্রাস অক্সাইড (N₂O), যা লাফিং গ্যাস নামেও পরিচিত, একটি বর্ণহীন এবং প্রায় গন্ধহীন গ্যাস। এটি অ্যালকোহল এবং শীতল পানিতে দ্রবণীয়। এর কোনো দুর্গন্ধ নেই।</p>",
+        },
+        {
+          id: 16,
+          question: "হ্যালোজেন সমূহের সক্রিয়তার ক্রম কোনটি?",
+          options: {
+            a: "ফ্লোরিন > ব্রোমিন > আয়োডিন > ক্লোরিন",
+            b: "ব্রোমিন > ফ্লোরিন > ক্লোরিন > আয়োডিন",
+            c: "ফ্লোরিন > ক্লোরিন > ব্রোমিন > আয়োডিন",
+            d: "ক্লোরিন > আয়োডিন > ব্রোমিন > ফ্লোরিন",
+          },
+          correct: "c",
+          explanation:
+            "<p>হ্যালোজেনগুলোর সক্রিয়তা পর্যায় সারণিতে উপর থেকে নিচে হ্রাস পায়। এর কারণ হল, পারমাণবিক আকার বৃদ্ধির সাথে সাথে ইলেকট্রন গ্রহণের প্রবণতা কমে যায়। তাই, হ্যালোজেনগুলোর সক্রিয়তার সঠিক ক্রম হলো: ফ্লোরিন (F₂) > ক্লোরিন (Cl₂) > ব্রোমিন (Br₂) > আয়োডিন (I₂)।</p>",
+        },
+        {
+          id: 17,
+          question:
+            "হিলিয়াম নিম্নের কোন তাপমাত্রায় সুপার ফ্লুইড (Super fluid)-এ পরিবর্তিত হয়?",
+          options: {
+            a: "2.41K",
+            b: "2.17K",
+            c: "2.29K",
+            d: "6.07K",
+          },
+          correct: "b",
+          explanation:
+            "<p>হিলিয়াম-৪ (He-4) 2.17 কেলভিন (K) তাপমাত্রায় সুপারফ্লুইড অবস্থায় পরিবর্তিত হয়। এই তাপমাত্রাকে ল্যাম্বডা পয়েন্ট বলা হয়। সুপারফ্লুইড অবস্থায় হিলিয়াম কোনো সান্দ্রতা প্রদর্শন করে না এবং এটি পাত্রের দেয়াল বেয়ে উপরে উঠতে পারে।</p>",
+        },
+        {
+          id: 18,
+          question: "নিম্নের কোনটি জারক নয়?",
+          options: {
+            a: "MnO₂",
+            b: "CO",
+            c: "I₂",
+            d: "H₂O₂",
+          },
+          correct: "b",
+          explanation:
+            "<p>কার্বন মনোক্সাইড (CO) সাধারণত একটি বিজারক হিসেবে কাজ করে, জারক হিসেবে নয়। এটি অন্যান্য পদার্থ থেকে অক্সিজেন অপসারণ করতে পারে। ম্যাঙ্গানিজ ডাইঅক্সাইড (MnO₂), আয়োডিন (I₂) এবং হাইড্রোজেন পারক্সাইড (H₂O₂) সবই জারক হিসেবে কাজ করতে পারে।</p>",
+        },
+        {
+          id: 19,
+          question: "তরল নাইট্রোজেন নিম্নের কোন তাপমাত্রা সৃষ্টি করতে পারে?",
+          options: {
+            a: "-55°C",
+            b: "-75°C",
+            c: "-196°C",
+            d: "-70°C",
+          },
+          correct: "c",
+          explanation:
+            "<p>তরল নাইট্রোজেন (Liquid Nitrogen) অত্যন্ত শীতল এবং এর স্ফুটনাঙ্ক প্রায় -196°C (বা 77 K)। এটি পরীক্ষাগার এবং শিল্পে নিম্ন তাপমাত্রা সৃষ্টি করার জন্য বহুল ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 20,
+          question: "এনার্জি সেভিং বালবে নিম্নের কোনটি ব্যবহার করা হয়?",
+          options: {
+            a: "রেডন",
+            b: "হিলিয়াম",
+            c: "আর্গন",
+            d: "পারদ",
+          },
+          correct: "d",
+          explanation:
+            "<p>এনার্জি সেভিং বাল্ব (CFL - Compact Fluorescent Lamp) এর ভিতরে সামান্য পরিমাণে পারদ (Mercury) বাষ্প থাকে। যখন বিদ্যুৎ প্রবাহিত হয়, তখন পারদের পরমাণুগুলো উত্তেজিত হয়ে অতিবেগুনী রশ্মি নির্গত করে, যা বাল্বের ভিতরের ফ্লুরোসেন্ট আবরণে আঘাত করে দৃশ্যমান আলো উৎপন্ন করে।</p>",
+        },
+        {
+          id: 21,
+          question:
+            "Al₂O₃·3H₂O নিম্নের কোন অ্যালুমিনিয়ামের আকরিক থেকে পাওয়া যায়?",
+          options: {
+            a: "জিবসাইট",
+            b: "অ্যানুলাইট",
+            c: "এনসেলাইট",
+            d: "ডায়াস্পোর",
+          },
+          correct: "a",
+          explanation:
+            "<p>Al₂O₃·3H₂O হলো জিবসাইট (Gibbsite) এর রাসায়নিক সংকেত, যা অ্যালুমিনিয়ামের একটি গুরুত্বপূর্ণ আকরিক। অ্যালুমিনিয়ামের অন্যান্য প্রধান আকরিকগুলো হলো ডায়াস্পোর (Al₂O₃·H₂O) এবং বোহেমাইট (Al₂O₃·H₂O)।</p>",
+        },
+        {
+          id: 22,
+          question:
+            "নিম্নের কোন নিষ্ক্রিয় গ্যাসের বাষ্পীয়ভবন তাপ, 1.7 kJ mol⁻¹?",
+          options: {
+            a: "হিলিয়াম",
+            b: "আর্গন",
+            c: "নিয়ন",
+            d: "ক্রিপ্টন",
+          },
+          correct: "c",
+          explanation:
+            "<p>নিয়ন (Neon) এর বাষ্পীয়ভবন তাপ (heat of vaporization) প্রায় 1.7 kJ mol⁻¹। নিষ্ক্রিয় গ্যাসগুলোর মধ্যে তাদের আন্তঃআণবিক বল এবং পারমাণবিক আকারের উপর ভিত্তি করে বাষ্পীয়ভবন তাপ পরিবর্তিত হয়। হিলিয়ামের বাষ্পীয়ভবন তাপ সবচেয়ে কম, এবং পারমাণবিক সংখ্যা বৃদ্ধির সাথে সাথে তা বৃদ্ধি পায়।</p>",
+        },
+        {
+          id: 23,
+          question: "নিম্নের কোনটি সঠিক?",
+          options: {
+            a: "সিলিকেট সমূহ উচ্চ আণবিক ভর বিশিষ্ট পলিমার",
+            b: "CCl₄ একটি সন্নিবেশ যৌগ",
+            c: "সিলিকন শুধু দানাদার রূপে পাওয়া যায়",
+            d: "গ্রাফাইট বিদ্যুৎ অর্ধপরিবাহী",
+          },
+          correct: "a",
+          explanation:
+            "<p>সিলিকেটগুলো (Silicates) সাধারণত SiO₄⁴⁻ টেট্রাহেড্রাল এককগুলোর পুনরাবৃত্তিমূলক বিন্যাসের মাধ্যমে গঠিত উচ্চ আণবিক ভর বিশিষ্ট পলিমার। এগুলি পৃথিবীর ভূত্বকের সবচেয়ে সাধারণ খনিজ। CCl₄ একটি সমযোজী যৌগ, সন্নিবেশ যৌগ নয়। সিলিকন ক্রিস্টাল এবং অ্যামোরফাস উভয় রূপেই পাওয়া যায়। গ্রাফাইট বিদ্যুৎ সুপরিবাহী, অর্ধপরিবাহী নয়।</p>",
+        },
+        {
+          id: 24,
+          question: "নিচের কোন অক্সাইডটি উভধর্মী অক্সাইড?",
+          options: {
+            a: "CO₂",
+            b: "Al₂O₃",
+            c: "MgO",
+            d: "Na₂O",
+          },
+          correct: "b",
+          explanation:
+            "<p>উভধর্মী অক্সাইড (Amphoteric Oxide) হলো সেইসব অক্সাইড যারা অ্যাসিড এবং ক্ষার উভয় প্রকারের সাথেই বিক্রিয়া করতে পারে। অ্যালুমিনিয়াম অক্সাইড (Al₂O₃) একটি উভধর্মী অক্সাইড। কার্বন ডাইঅক্সাইড (CO₂) অম্লীয়, ম্যাগনেসিয়াম অক্সাইড (MgO) ক্ষারীয় এবং সোডিয়াম অক্সাইড (Na₂O) তীব্র ক্ষারীয় অক্সাইড।</p>",
+        },
+        {
+          id: 25,
+          question: "নিষ্ক্রিয় গ্যাসের পর সবচেয়ে নিষ্ক্রিয় মৌল কোনটি?",
+          options: {
+            a: "অক্সিজেন",
+            b: "হাইড্রোজেন",
+            c: "নাইট্রোজেন",
+            d: "কার্বন",
+          },
+          correct: "c",
+          explanation:
+            "<p>নিষ্ক্রিয় গ্যাসের পর সবচেয়ে নিষ্ক্রিয় মৌল হল নাইট্রোজেন (N₂)। নাইট্রোজেন অণুতে দুটি নাইট্রোজেন পরমাণু একটি শক্তিশালী ত্রিবন্ধন দ্বারা আবদ্ধ থাকে, যা এটিকে রাসায়নিকভাবে অত্যন্ত স্থিতিশীল এবং নিষ্ক্রিয় করে তোলে। এই বন্ধন ভাঙতে প্রচুর শক্তির প্রয়োজন হয়, তাই নাইট্রোজেন সাধারণ অবস্থায় খুব কম বিক্রিয়া করে।</p>",
+        },
+        {
+          id: 26,
+          question: "PbO₂ কে দ্রবীভূত করতে নিচের কোনটি ব্যবহার করা যাবে?",
+          options: {
+            a: "HCl",
+            b: "H₂SO₄",
+            c: "HNO₃",
+            d: "HO + H₂O",
+          },
+          correct: "c",
+          explanation:
+            "<p>লেড ডাইঅক্সাইড (PbO₂) একটি অক্সাইড যা শক্তিশালী অ্যাসিড যেমন নাইট্রিক অ্যাসিড (HNO₃) এর সাথে বিক্রিয়া করে দ্রবীভূত হয়। PbO₂ একটি জারক অক্সাইড এবং এটি অ্যাসিডের সাথে বিক্রিয়া করে লেড(II) লবণ এবং অক্সিজেন উৎপন্ন করতে পারে। HCl এবং H₂SO₄ এর সাথে লেড ক্লোরাইড বা লেড সালফেট তৈরি হতে পারে যা অদ্রবণীয় হতে পারে।</p>",
+        },
+        {
+          id: 27,
+          question: "নিচের কোন অক্সাইড অম্লধর্মী?",
+          options: {
+            a: "MgO",
+            b: "Al₂O₃",
+            c: "Na₂O",
+            d: "CO₂",
+          },
+          correct: "d",
+          explanation:
+            "<p>সাধারণত, অধাতব অক্সাইডগুলো অম্লধর্মী হয়। কার্বন ডাইঅক্সাইড (CO₂) একটি অধাতব অক্সাইড, যা পানিতে দ্রবীভূত হয়ে কার্বনিক অ্যাসিড (H₂CO₃) উৎপন্ন করে, যা অম্লীয় প্রকৃতির। ম্যাগনেসিয়াম অক্সাইড (MgO) ক্ষারীয়, অ্যালুমিনিয়াম অক্সাইড (Al₂O₃) উভধর্মী এবং সোডিয়াম অক্সাইড (Na₂O) ক্ষারীয়।</p>",
+        },
+        {
+          id: 28,
+          question: "দৈত্যাকার অণু গঠন করে কোনটি?",
+          options: {
+            a: "CO₂",
+            b: "SiO₂",
+            c: "SO₂",
+            d: "NO₂",
+          },
+          correct: "b",
+          explanation:
+            "<p>সিলিকন ডাইঅক্সাইড (SiO₂), যা সিলিকা নামেও পরিচিত, একটি দৈত্যাকার অণু (Giant Molecule) বা নেটওয়ার্ক সলিড গঠন করে। এতে প্রতিটি সিলিকন পরমাণু চারটি অক্সিজেন পরমাণুর সাথে সমযোজী বন্ধনে আবদ্ধ থাকে, এবং প্রতিটি অক্সিজেন পরমাণু দুটি সিলিকন পরমাণুর সাথে যুক্ত থাকে, যা একটি বৃহৎ ত্রিমাত্রিক জালিকা গঠন করে। কার্বন ডাইঅক্সাইড (CO₂), সালফার ডাইঅক্সাইড (SO₂) এবং নাইট্রোজেন ডাইঅক্সাইড (NO₂) ছোট আণবিক যৌগ।</p>",
+        },
+        {
+          id: 29,
+          question: "p ব্লকের মৌল সংখ্যা কয়টি?",
+          options: {
+            a: "১৪টি",
+            b: "৩৬টি",
+            c: "৪১টি",
+            d: "২৭টি",
+          },
+          correct: "b",
+          explanation:
+            "<p>আধুনিক পর্যায় সারণিতে p-ব্লকে মোট ৩৬টি মৌল রয়েছে। এই ব্লকে গ্রুপ 13 থেকে গ্রুপ 18 পর্যন্ত সমস্ত মৌল অন্তর্ভুক্ত। এটি পর্যায় সারণির ডান দিকের অংশ গঠন করে এবং ধাতু, অধাতু ও অপধাতু উভয়ই এতে অন্তর্ভুক্ত।</p>",
+        },
+        {
+          id: 30,
+          question: "প্রথম p ব্লক মৌল কোনটি?",
+          options: {
+            a: "B",
+            b: "C",
+            c: "S",
+            d: "N",
+          },
+          correct: "a",
+          explanation:
+            "<p>পর্যায় সারণির দ্বিতীয় পর্যায়ে, গ্রুপ 13 এর মৌল বোরন (B) হলো প্রথম p-ব্লক মৌল। এর পারমাণবিক সংখ্যা 5 এবং ইলেকট্রন বিন্যাস 1s² 2s² 2p¹। এর শেষ ইলেকট্রনটি p-অরবিটালে প্রবেশ করে, তাই এটি p-ব্লকের অন্তর্ভুক্ত।</p>",
+        },
+        {
+          id: 31,
+          question: "নিচের কোন যৌগটি আর্দ্র বিশ্লেষিত হয়?",
+          options: {
+            a: "C₆H₆",
+            b: "NaCl",
+            c: "SiCl₄",
+            d: "CCl₄",
+          },
+          correct: "c",
+          explanation:
+            "<p>সিলিকন টেট্রাক্লোরাইড (SiCl₄) পানিতে আর্দ্র বিশ্লেষিত হয়। সিলিকনে d-অরবিটালের উপস্থিতি এবং ক্লোরিনের উচ্চ তড়িৎ ঋণাত্মকতার কারণে, পানির অণু সিলিকনের উপর আক্রমণ করে এবং HCl ও সিলিসিক অ্যাসিড (Si(OH)₄) উৎপন্ন করে। কার্বন টেট্রাক্লোরাইড (CCl₄) এর ক্ষেত্রে কার্বনের d-অরবিটাল না থাকায় এবং কার্বন-ক্লোরিন বন্ধন শক্তিশালী হওয়ায় এটি আর্দ্র বিশ্লেষিত হয় না।</p>",
+        },
+        {
+          id: 32,
+          question: "কোন যৌগটি সম্ভব নয়?",
+          options: {
+            a: "AlN",
+            b: "NCl₅",
+            c: "Ca₃N₂",
+            d: "PCl₅",
+          },
+          correct: "b",
+          explanation:
+            "<p>নাইট্রোজেন পেন্টাক্লোরাইড (NCl₅) যৌগটি সম্ভব নয়। নাইট্রোজেনের ইলেকট্রন বিন্যাস 1s² 2s² 2p³। এর কোনো d-অরবিটাল না থাকায় এটি তার যোজ্যতা স্তর সম্প্রসারণ করতে পারে না এবং সর্বোচ্চ 3টি সমযোজী বন্ধন গঠন করতে পারে (NCl₃ এর মতো)। অন্যদিকে, ফসফরাসের (P) d-অরবিটাল থাকায় এটি PCl₅ গঠন করতে পারে।</p>",
+        },
+        {
+          id: 33,
+          question: "কোন নিষ্ক্রিয় গ্যাসটি p-ব্লকের মৌল নয়?",
+          options: {
+            a: "He",
+            b: "Ne",
+            c: "Ar",
+            d: "Kr",
+          },
+          correct: "a",
+          explanation:
+            "<p>হিলিয়াম (He) একটি নিষ্ক্রিয় গ্যাস, কিন্তু এটি p-ব্লকের মৌল নয়। এর ইলেকট্রন বিন্যাস 1s² হওয়ায় এটি s-ব্লকের অন্তর্ভুক্ত। যদিও এটি পর্যায় সারণিতে গ্রুপ 18 (p-ব্লক) এ রাখা হয়েছে এর নিষ্ক্রিয়তার কারণে, এর শেষ ইলেকট্রন s-অরবিটালে প্রবেশ করে। অন্যান্য নিষ্ক্রিয় গ্যাস যেমন নিয়ন (Ne), আর্গন (Ar), ক্রিপ্টন (Kr) সবই p-ব্লকের মৌল।</p>",
+        },
+        {
+          id: 34,
+          question:
+            "নিচের কোন মৌলটি অম্লীয় অক্সাইড ও অম্লীয় হাইড্রক্সাইড যৌগ গঠন করে?",
+          options: {
+            a: "সোডিয়াম",
+            b: "ম্যাগনেসিয়াম",
+            c: "ফ্লোরিন",
+            d: "সালফার",
+          },
+          correct: "d",
+          explanation:
+            "<p>সালফার (S) একটি অধাতু এবং এটি অম্লীয় অক্সাইড (যেমন SO₂, SO₃) এবং অম্লীয় হাইড্রোক্সাইড (যেমন H₂SO₃, H₂SO₄) উভয়ই গঠন করে। সোডিয়াম এবং ম্যাগনেসিয়াম ধাতু, তারা ক্ষারীয় অক্সাইড ও হাইড্রোক্সাইড গঠন করে। ফ্লোরিন তীব্র জারক হলেও, এর কোনো স্থিতিশীল অক্সাইড নেই যা অম্লীয় দ্রবণ তৈরি করে।</p>",
+        },
+        {
+          id: 35,
+          question: "কোন অক্সাইডটি অম্লধর্মী?",
+          options: {
+            a: "SiO₂",
+            b: "Al₂O₃",
+            c: "H₂O",
+            d: "Na₂O",
+          },
+          correct: "a",
+          explanation:
+            "<p>সিলিকন ডাইঅক্সাইড (SiO₂) একটি অম্লধর্মী অক্সাইড। এটি পানিতে সামান্য দ্রবণীয় এবং শক্তিশালী ক্ষারের সাথে বিক্রিয়া করে সিলিকেট তৈরি করে। অ্যালুমিনিয়াম অক্সাইড (Al₂O₃) উভধর্মী, পানি (H₂O) নিরপেক্ষ, এবং সোডিয়াম অক্সাইড (Na₂O) ক্ষারধর্মী।</p>",
+        },
+        {
+          id: 36,
+          question: "নিচের কোন অক্সাইডটি সবচেয়ে বেশি অম্লধর্মী হবে?",
+          options: {
+            a: "SiO₂",
+            b: "CO₂",
+            c: "P₂O₅",
+            d: "N₂O₅",
+          },
+          correct: "d",
+          explanation:
+            "<p>অক্সাইডগুলোর অম্লধর্মিতা কেন্দ্রীয় পরমাণুর তড়িৎঋণাত্মকতা এবং জারণ অবস্থার উপর নির্ভর করে। নাইট্রোজেন পেন্টক্সাইড (N₂O₅) এর নাইট্রোজেন সর্বোচ্চ জারণ অবস্থা (+5) এ থাকে এবং এটি একটি শক্তিশালী অম্লীয় অক্সাইড, যা পানিতে দ্রবীভূত হয়ে নাইট্রিক অ্যাসিড (HNO₃) উৎপন্ন করে। এটি SiO₂, CO₂, এবং P₂O₅ এর চেয়ে বেশি অম্লীয়।</p>",
+        },
+        {
+          id: 37,
+          question: "উভধর্মী অক্সাইড নিচের কোনটি?",
+          options: {
+            a: "BeO",
+            b: "Na₂O",
+            c: "CO₂",
+            d: "MgO",
+          },
+          correct: "a",
+          explanation:
+            "<p>উভধর্মী অক্সাইড অ্যাসিড এবং ক্ষার উভয় প্রকারের সাথেই বিক্রিয়া করতে পারে। বেরিলিয়াম অক্সাইড (BeO) একটি উভধর্মী অক্সাইড। সোডিয়াম অক্সাইড (Na₂O) ক্ষারীয়, কার্বন ডাইঅক্সাইড (CO₂) অম্লীয় এবং ম্যাগনেসিয়াম অক্সাইড (MgO) ক্ষারীয়।</p>",
+        },
+        {
+          id: 38,
+          question: "অ্যালুমিনিয়াম ক্লোরাইড কীরূপে থাকে?",
+          options: {
+            a: "মনোমার",
+            b: "ডাইমার",
+            c: "ট্রাইমার",
+            d: "পলিমার",
+          },
+          correct: "b",
+          explanation:
+            "<p>অ্যালুমিনিয়াম ক্লোরাইড (AlCl₃) সাধারণত ডাইমার (dimer) রূপে থাকে, যার সংকেত Al₂Cl₆। অ্যালুমিনিয়াম একটি ইলেকট্রন ঘাটতিপূর্ণ মৌল এবং এটি স্থিতিশীলতা অর্জনের জন্য দুটি AlCl₃ একক ক্লোরিন পরমাণুর মাধ্যমে সেতু বন্ধন তৈরি করে একটি ডাইমার গঠন করে।</p>",
+        },
+        {
+          id: 39,
+          question: "অপধাতুর সংখ্যা কত?",
+          options: {
+            a: "6",
+            b: "8",
+            c: "9",
+            d: "10",
+          },
+          correct: "a",
+          explanation:
+            "<p>পর্যায় সারণিতে সাধারণত ৬টি মৌলকে প্রধান অপধাতু হিসেবে বিবেচনা করা হয়। এগুলো হলো: বোরন (B), সিলিকন (Si), জার্মেনিয়াম (Ge), আর্সেনিক (As), অ্যান্টিমনি (Sb) এবং টেলুরিয়াম (Te)। মাঝে মাঝে পোলোনিয়াম (Po) এবং অ্যাস্টাটিন (At) কেও অপধাতু হিসেবে ধরা হয়, তবে প্রধানত ৬টিই স্বীকৃত।</p>",
+        },
+        {
+          id: 40,
+          question: "নিচের কোন যৌগে অক্সিজেনের জারণ সংখ্যা -1/2 হয়?",
+          options: {
+            a: "Na₂O₂",
+            b: "H₂O₂",
+            c: "K₂O",
+            d: "KO₂",
+          },
+          correct: "d",
+          explanation:
+            '<p>পটাশিয়াম সুপার অক্সাইড (KO₂) যৌগে অক্সিজেনের জারণ সংখ্যা -1/2 হয়। এই ধরনের যৌগগুলোকে সুপার অক্সাইড বলা হয়, যেখানে অক্সিজেন <span class="math-inline">O₂⁻</span> আয়ন রূপে বিদ্যমান। Na₂O₂ এবং H₂O₂ হল পারক্সাইড, যেখানে অক্সিজেনের জারণ সংখ্যা -1। K₂O একটি সাধারণ অক্সাইড, যেখানে অক্সিজেনের জারণ সংখ্যা -2।</p>',
+        },
+        {
+          id: 41,
+          question: "নিচের কোন যুগলের দুইটি মৌলই অষ্টক সম্প্রসারণ ঘটাতে পারে?",
+          options: {
+            a: "Al, S",
+            b: "Al, Si",
+            c: "Al, Sb",
+            d: "Si, P",
+          },
+          correct: "d",
+          explanation:
+            "<p>অষ্টক সম্প্রসারণ ঘটাতে হলে মৌলটির যোজ্যতা স্তরে ফাঁকা d-অরবিটাল থাকতে হয়। সিলিকন (Si) এবং ফসফরাস (P) উভয়ই তৃতীয় পর্যায়ের মৌল এবং এদের ফাঁকা 3d-অরবিটাল রয়েছে, যার ফলে তারা অষ্টক সম্প্রসারণ ঘটিয়ে 8টির বেশি ইলেকট্রন ধারণ করতে পারে (যেমন SiF₆²⁻, PCl₅)। অ্যালুমিনিয়ামের ফাঁকা d-অরবিটাল নেই (এটি দ্বিতীয় পর্যায়ের মৌল)।</p>",
+        },
+        {
+          id: 42,
+          question: "SiO₂ কোন ধর্মী অক্সাইড?",
+          options: {
+            a: "অম্লীয়",
+            b: "ক্ষারীয়",
+            c: "উভধর্মী",
+            d: "নিরপেক্ষ",
+          },
+          correct: "a",
+          explanation:
+            "<p>সিলিকন ডাইঅক্সাইড (SiO₂) একটি অম্লীয় অক্সাইড। এটি পানিতে খুব কম দ্রবণীয় হলেও, ক্ষারের সাথে বিক্রিয়া করে লবণ ও পানি উৎপন্ন করে, যা এর অম্লীয় ধর্ম প্রমাণ করে। উদাহরণস্বরূপ, এটি সোডিয়াম হাইড্রোক্সাইডের সাথে বিক্রিয়া করে সোডিয়াম সিলিকেট (Na₂SiO₃) উৎপন্ন করে।</p>",
+        },
+        {
+          id: 43,
+          question: "কোন অক্সাইডটি ক্ষারধর্মী?",
+          options: {
+            a: "Al₂O₃",
+            b: "MgO",
+            c: "SiO₂",
+            d: "P₂O₅",
+          },
+          correct: "b",
+          explanation:
+            "<p>ধাতব অক্সাইডগুলো সাধারণত ক্ষারধর্মী হয়। ম্যাগনেসিয়াম অক্সাইড (MgO) একটি শক্তিশালী ক্ষারীয় অক্সাইড, যা পানিতে মিশে ম্যাগনেসিয়াম হাইড্রোক্সাইড উৎপন্ন করে। অ্যালুমিনিয়াম অক্সাইড (Al₂O₃) উভধর্মী, সিলিকন ডাইঅক্সাইড (SiO₂) অম্লীয় এবং ফসফরাস পেন্টক্সাইড (P₂O₅) তীব্র অম্লীয়।</p>",
+        },
+        {
+          id: 44,
+          question: "Al₂O₃ এর অম্লত্ব কত?",
+          options: {
+            a: "2",
+            b: "3",
+            c: "5",
+            d: "6",
+          },
+          correct: "d",
+          explanation:
+            "<p>Al₂O₃ (অ্যালুমিনিয়াম অক্সাইড) একটি উভধর্মী অক্সাইড, যার অর্থ এটি অ্যাসিড এবং ক্ষার উভয় হিসাবে কাজ করতে পারে। অক্সাইডের অম্লত্ব (বা ক্ষারকত্ব) তার সাথে বিক্রিয়া করে যতগুলো হাইড্রোজেন আয়ন বা হাইড্রোক্সাইড আয়ন গ্রহণ বা ত্যাগ করতে পারে তার উপর নির্ভর করে। Al₂O₃ অ্যাসিডের সাথে বিক্রিয়া করার সময় (ক্ষার হিসেবে কাজ করে) প্রতি অণু 6টি হাইড্রোজেন আয়ন গ্রহণ করতে পারে (যেমন Al₂O₃ + 6HCl → 2AlCl₃ + 3H₂O), এবং ক্ষারের সাথে বিক্রিয়া করার সময় (অ্যাসিড হিসেবে কাজ করে) প্রতি অণু 6টি হাইড্রোক্সাইড আয়ন ত্যাগ করতে পারে (যেমন Al₂O₃ + 2NaOH + 3H₂O → 2Na[Al(OH)₄])। এই কারণে, এর অম্লত্ব বা ক্ষারকত্ব 6 ধরা হয়।</p>",
+        },
+        {
+          id: 45,
+          question: "AlCl₃ এর ডাইমারে মুক্ত জোড় ইলেকট্রন কয়টি?",
+          options: {
+            a: "6",
+            b: "10",
+            c: "12",
+            d: "16",
+          },
+          correct: "d",
+          explanation: "-",
+        },
+        {
+          id: 46,
+          question: "SO₂ এর ক্ষারকত্ব কত?",
+          options: {
+            a: "2",
+            b: "3",
+            c: "4",
+            d: "5",
+          },
+          correct: "a",
+          explanation:
+            "<p>সালফার ডাইঅক্সাইড (SO₂) একটি অম্লীয় অক্সাইড। যখন এটি পানিতে দ্রবীভূত হয়, তখন এটি সালফিউরাস অ্যাসিড (H₂SO₃) উৎপন্ন করে। সালফিউরাস অ্যাসিড একটি ডাইবেসিক অ্যাসিড, অর্থাৎ এটি দুটি হাইড্রোজেন আয়ন ত্যাগ করতে পারে। তাই, SO₂ এর ক্ষারকত্ব 2।</p>",
+        },
+        {
+          id: 47,
+          question: "কোনটি বিরল গ্যাস?",
+          options: {
+            a: "N₂",
+            b: "Ar",
+            c: "O₂",
+            d: "F₂",
+          },
+          correct: "b",
+          explanation:
+            "<p>আর্গন (Ar) একটি বিরল গ্যাস (Noble Gas) বা নিষ্ক্রিয় গ্যাস। এই গ্যাসগুলো পর্যায় সারণির গ্রুপ 18 তে অবস্থিত এবং এদের স্থিতিশীল ইলেকট্রন বিন্যাসের কারণে এরা রাসায়নিকভাবে খুবই নিষ্ক্রিয়। নাইট্রোজেন (N₂), অক্সিজেন (O₂) এবং ফ্লোরিন (F₂) সবই সক্রিয় অধাতু।</p>",
+        },
+        {
+          id: 48,
+          question: "নিচের কোনটি অভিজাত গ্যাস?",
+          options: {
+            a: "Na",
+            b: "Ar",
+            c: "O₂",
+            d: "Xe",
+          },
+          correct: "d",
+          explanation:
+            "<p>অভিজাত গ্যাস (Noble Gas) হলো নিষ্ক্রিয় গ্যাসগুলোর আরেক নাম। জেনন (Xe) একটি নিষ্ক্রিয় গ্যাস, যা পর্যায় সারণির গ্রুপ 18 তে অবস্থিত। সোডিয়াম (Na) ক্ষার ধাতু, আর্গন (Ar) নিষ্ক্রিয় গ্যাস এবং অক্সিজেন (O₂) একটি অধাতু। এই বিকল্পগুলোর মধ্যে জেননই একমাত্র অভিজাত গ্যাস।</p>",
+        },
+        {
+          id: 49,
+          question: "Cl (17) কোন ব্লকের মৌল?",
+          options: {
+            a: "s-ব্লক",
+            b: "p-ব্লক",
+            c: "d-ব্লক",
+            d: "f-ব্লক",
+          },
+          correct: "b",
+          explanation:
+            "<p>ক্লোরিন (Cl) এর পারমাণবিক সংখ্যা 17 এবং এর ইলেকট্রন বিন্যাস হল [Ne] 3s² 3p⁵। যেহেতু শেষ ইলেকট্রনটি p-অরবিটালে প্রবেশ করেছে, তাই ক্লোরিন p-ব্লকের মৌল। এটি হ্যালোজেন পরিবারের (গ্রুপ 17) সদস্য।</p>",
+        },
+        {
+          id: 50,
+          question:
+            "পর্যায় সারণির কোন দুটি গ্রুপের নাম নিকটোজেন ও চ্যালকোজেন?",
+          options: {
+            a: "Gr-14, 15",
+            b: "Gr-14, 16",
+            c: "Gr-15, 16",
+            d: "Gr-16, 17",
+          },
+          correct: "c",
+          explanation:
+            "<p>পর্যায় সারণির গ্রুপ 15 এর মৌলগুলোকে নিকটোজেন (Pnictogens) বলা হয় (যেমন নাইট্রোজেন, ফসফরাস) এবং গ্রুপ 16 এর মৌলগুলোকে চ্যালকোজেন (Chalcogens) বলা হয় (যেমন অক্সিজেন, সালফার)।</p>",
+        },
+        {
+          id: 51,
+          question: "আন্তঃহ্যালোজেন যৌগ কোনটি?",
+          options: {
+            a: "SCl₂",
+            b: "PCl₅",
+            c: "ClF₃",
+            d: "SOCl₂",
+          },
+          correct: "c",
+          explanation:
+            "<p>আন্তঃহ্যালোজেন যৌগ (Interhalogen Compound) হলো সেইসব যৌগ যা দুটি বা ততোধিক ভিন্ন হ্যালোজেন পরমাণু দ্বারা গঠিত হয়। ক্লোরিন ট্রাইফ্লুরাইড (ClF₃) একটি আন্তঃহ্যালোজেন যৌগ, কারণ এটি ক্লোরিন এবং ফ্লোরিন - দুটি ভিন্ন হ্যালোজেন দ্বারা গঠিত। SCl₂, PCl₅ এবং SOCl₂ অন্য মৌলের সাথে হ্যালোজেন নিয়ে গঠিত যৌগ, আন্তঃহ্যালোজেন যৌগ নয়।</p>",
+        },
+        {
+          id: 52,
+          question: "কোনটি উপধাতু?",
+          options: {
+            a: "Na",
+            b: "Ge",
+            c: "S",
+            d: "Co",
+          },
+          correct: "b",
+          explanation:
+            "<p>জার্মেনিয়াম (Ge) একটি উপধাতু (Metalloid)। উপধাতু হলো সেইসব মৌল যারা ধাতু এবং অধাতু উভয় প্রকারের ধর্ম প্রদর্শন করে। সোডিয়াম (Na) ক্ষার ধাতু, সালফার (S) অধাতু এবং কোবাল্ট (Co) অবস্থান্তর ধাতু।</p>",
+        },
+        {
+          id: 53,
+          question: "নিচের কোন অক্সাইডটি অম্লধর্মী প্রকৃতির?",
+          options: {
+            a: "F₂O",
+            b: "Li₂O",
+            c: "MgO",
+            d: "Na₂O",
+          },
+          correct: "a",
+          explanation:
+            "<p>সাধারণত, অধাতব অক্সাইডগুলো অম্লধর্মী হয়। ডাইফ্লোরিন অক্সাইড (F₂O) একটি অম্লীয় অক্সাইড, কারণ ফ্লোরিন অক্সিজেনের চেয়ে বেশি তড়িৎঋণাত্মক। লিথিয়াম অক্সাইড (Li₂O), ম্যাগনেসিয়াম অক্সাইড (MgO) এবং সোডিয়াম অক্সাইড (Na₂O) সবই ক্ষারীয় অক্সাইড।</p>",
+        },
+        {
+          id: 54,
+          question:
+            "নিম্নের কোনটির ক্ষেত্রে ভ্যান্ডার ওয়ালস আকর্ষণ বল সবচেয়ে বেশি?",
+          options: {
+            a: "F₂",
+            b: "Cl₂",
+            c: "H₂",
+            d: "I₂",
+          },
+          correct: "d",
+          explanation:
+            "<p>ভ্যান্ডার ওয়ালস আকর্ষণ বল, বিশেষ করে লন্ডন ডিসপারশন বল, অণুর আকার এবং ইলেকট্রন সংখ্যার উপর নির্ভর করে। অণুর আকার যত বড় হয় এবং ইলেকট্রন সংখ্যা যত বেশি হয়, ভ্যান্ডার ওয়ালস আকর্ষণ বল তত শক্তিশালী হয়। হ্যালোজেনগুলোর মধ্যে, আয়োডিন (I₂) এর আকার সবচেয়ে বড় এবং ইলেকট্রন সংখ্যা সবচেয়ে বেশি, তাই এর ক্ষেত্রে ভ্যান্ডার ওয়ালস আকর্ষণ বল সবচেয়ে বেশি।</p>",
+        },
+        {
+          id: 55,
+          question: "p ব্লক মৌলগুলোর বেশির ভাগ কী?",
+          options: {
+            a: "ধাতু",
+            b: "অধাতু",
+            c: "উপধাতু",
+            d: "চৌম্বক পদার্থ",
+          },
+          correct: "b",
+          explanation:
+            "<p>p-ব্লক পর্যায় সারণির সেই অংশ যেখানে অধাতু, উপধাতু এবং কিছু ধাতু উভয়ই বিদ্যমান। তবে, p-ব্লকের বেশিরভাগ মৌলই অধাতু (যেমন কার্বন, নাইট্রোজেন, অক্সিজেন, ফ্লোরিন, ক্লোরিন ইত্যাদি)।</p>",
+        },
+        {
+          id: 56,
+          question: "কোন অক্সাইডের জলীয় দ্রবণের pH মান 7 অপেক্ষা বেশি?",
+          options: {
+            a: "Na₂O",
+            b: "BeO",
+            c: "Al₂O₃",
+            d: "CO₂",
+          },
+          correct: "a",
+          explanation:
+            "<p>যে অক্সাইডের জলীয় দ্রবণ ক্ষারীয় হবে, তার pH মান 7 অপেক্ষা বেশি হবে। সোডিয়াম অক্সাইড (Na₂O) একটি তীব্র ক্ষারীয় অক্সাইড, যা পানিতে দ্রবীভূত হয়ে সোডিয়াম হাইড্রোক্সাইড (NaOH) উৎপন্ন করে। NaOH একটি শক্তিশালী ক্ষার, তাই এর জলীয় দ্রবণের pH মান 7 এর বেশি হবে। BeO এবং Al₂O₃ উভধর্মী, এবং CO₂ অম্লীয়।</p>",
+        },
+        {
+          id: 57,
+          question: "নিম্নের কোনটি অম্লীয় জলীয় দ্রবণ তৈরি করে?",
+          options: {
+            a: "Na₂O",
+            b: "ZnO",
+            c: "Al₂O₃",
+            d: "CO₂",
+          },
+          correct: "d",
+          explanation:
+            "<p>অধাতব অক্সাইডগুলো সাধারণত অম্লীয় জলীয় দ্রবণ তৈরি করে। কার্বন ডাইঅক্সাইড (CO₂) একটি অধাতব অক্সাইড, যা পানিতে দ্রবীভূত হয়ে কার্বনিক অ্যাসিড (H₂CO₃) উৎপন্ন করে, যা অম্লীয় প্রকৃতির। Na₂O ক্ষারীয়, ZnO এবং Al₂O₃ উভধর্মী।</p>",
+        },
+        {
+          id: 58,
+          question: "অষ্টক অসম্পূর্ণ যৌগ কোনটি?",
+          options: {
+            a: "NH₃",
+            b: "BF₃",
+            c: "ClO₂",
+            d: "SO₃",
+          },
+          correct: "b",
+          explanation:
+            "<p>বোরন ট্রাইফ্লুরাইড (BF₃) একটি অষ্টক অসম্পূর্ণ যৌগ। বোরন পরমাণুর যোজ্যতা স্তরে শুধুমাত্র 6টি ইলেকট্রন থাকে (3টি বোরনের নিজস্ব এবং 3টি ফ্লোরিন থেকে প্রাপ্ত), যা অষ্টক নিয়ম পূরণে অপর্যাপ্ত। অ্যামোনিয়া (NH₃), ক্লোরিন ডাইঅক্সাইড (ClO₂) এবং সালফার ট্রাইঅক্সাইড (SO₃) এর কেন্দ্রীয় পরমাণুর অষ্টক সম্পূর্ণ বা সম্প্রসারিত হয়।</p>",
+        },
+        {
+          id: 59,
+          question:
+            "দ্বিতীয় পর্যায়ের নিচের কোন মৌলটির অক্সাইডের অম্লধর্ম সবচেয়ে বেশি?",
+          options: {
+            a: "Be",
+            b: "B",
+            c: "C",
+            d: "F",
+          },
+          correct: "d",
+          explanation:
+            "<p>দ্বিতীয় পর্যায়ের মৌলগুলোর মধ্যে, পর্যায় সারণির ডান দিকে গেলে অক্সাইডের অম্লধর্ম বৃদ্ধি পায়। ফ্লোরিন (F) একটি তীব্র অধাতু। এর অক্সাইড (F₂O) একটি অম্লীয় অক্সাইড, তবে সাধারণত F₂O-এর মতো যৌগগুলো অন্য অধাতব অক্সাইডের তুলনায় কম সুসংজ্ঞায়িত হয়। তবে, এই বিকল্পগুলির মধ্যে F সবচেয়ে বেশি তড়িৎঋণাত্মক। BeO উভধর্মী, B₂O₃ দুর্বল অম্লীয় এবং CO₂ অম্লীয়। ফ্লোরিনের অক্সাইড ব্যতিক্রমী, কারণ ফ্লোরিন অক্সিজেনের চেয়ে বেশি তড়িৎঋণাত্মক, তাই F₂O-তে অক্সিজেন ধনাত্মক জারণ অবস্থায় থাকে এবং এটি একটি অম্লীয় অক্সাইড।</p>",
+        },
+        {
+          id: 60,
+          question: "নিম্নের কোনটি সঠিক নয়?",
+          options: {
+            a: "সিলিকন চীপ কম্পিউটার তৈরিতে ব্যবহৃত হয়",
+            b: "বিশুদ্ধ সিলিকন প্রস্তুতিতে মিথেন গ্যাস প্রয়োজন হয়",
+            c: "সংকর ধাতু তৈরির জন্য সিলিকন ব্যবহার হয়",
+            d: "ভূ-ত্বকে কোয়ার্টজ সিলিকা বালি রূপে বিদ্যমান",
+          },
+          correct: "b",
+          explanation: "-",
+        },
+        {
+          id: 61,
+          question: "নিম্নের কোন যৌগটি উদ্বায়ী?",
+          options: {
+            a: "SnCl₂",
+            b: "SiCl₄",
+            c: "NaOH",
+            d: "PbCl₂",
+          },
+          correct: "b",
+          explanation:
+            "<p>সিলিকন টেট্রাক্লোরাইড (SiCl₄) একটি সমযোজী যৌগ, যার স্ফুটনাঙ্ক কম (প্রায় 57°C)। এটি সহজেই বাষ্পীভূত হয়, তাই এটি উদ্বায়ী। টিন(II) ক্লোরাইড (SnCl₂), সোডিয়াম হাইড্রোক্সাইড (NaOH) এবং লেড(II) ক্লোরাইড (PbCl₂) আয়নিক যৌগ বা অপেক্ষাকৃত কম উদ্বায়ী কঠিন পদার্থ।</p>",
+        },
+        {
+          id: 62,
+          question: "চ্যালকোজেন মৌল কোন ব্লকের অন্তর্ভুক্ত?",
+          options: {
+            a: "f",
+            b: "d",
+            c: "p",
+            d: "s",
+          },
+          correct: "c",
+          explanation:
+            "<p>চ্যালকোজেন মৌলগুলো পর্যায় সারণির গ্রুপ 16 এর অন্তর্ভুক্ত এবং এরা p-ব্লকের মৌল। এই গ্রুপে অক্সিজেন (O), সালফার (S), সেলেনিয়াম (Se), টেলুরিয়াম (Te) এবং পোলোনিয়াম (Po) রয়েছে।</p>",
+        },
+        {
+          id: 63,
+          question: "নিচের কোনটি পারঅক্সাইড যৌগ?",
+          options: {
+            a: "KO₂",
+            b: "NO₂",
+            c: "MnO₂",
+            d: "BaO₂",
+          },
+          correct: "d",
+          explanation:
+            '<p>পারঅক্সাইড যৌগ হলো সেইসব যৌগ যেখানে অক্সিজেন -1 জারণ অবস্থায় থাকে এবং <span class="math-inline">O₂²⁻</span> আয়ন বিদ্যমান। বেরিয়াম পারঅক্সাইড (BaO₂) একটি পারঅক্সাইড যৌগ। KO₂ একটি সুপার অক্সাইড (অক্সিজেন -1/2), NO₂ এবং MnO₂ সাধারণ অক্সাইড।</p>',
+        },
+        {
+          id: 64,
+          question: "পর্যায় সারণির কোন গ্রুপগুলোতে ধাতু ও অধাতু উভয়ই রয়েছে?",
+          options: {
+            a: "IA, IIA, IIIA, IVA",
+            b: "IIA, IIIA, IVA, VA",
+            c: "IIIA, IVA, VA, VIA",
+            d: "IIA, IVA, VA, VIIA",
+          },
+          correct: "c",
+          explanation:
+            "<p>পর্যায় সারণির গ্রুপ IIIA (গ্রুপ 13), IVA (গ্রুপ 14), VA (গ্রুপ 15) এবং VIA (গ্রুপ 16) তে ধাতু, উপধাতু এবং অধাতু উভয়ই বিদ্যমান। যেমন, গ্রুপ 13 তে বোরন (উপধাতু) এবং অ্যালুমিনিয়াম (ধাতু); গ্রুপ 14 তে কার্বন (অধাতু), সিলিকন (উপধাতু) এবং টিন (ধাতু); গ্রুপ 15 তে নাইট্রোজেন (অধাতু), আর্সেনিক (উপধাতু) এবং অ্যান্টিমনি (ধাতু); গ্রুপ 16 তে অক্সিজেন (অধাতু), টেলুরিয়াম (উপধাতু) এবং পোলোনিয়াম (ধাতু)।</p>",
+        },
+        {
+          id: 65,
+          question: "কোন দুটি মৌলের মধ্যে কর্ণ-সম্পর্ক বিদ্যমান?",
+          options: {
+            a: "Li, Be",
+            b: "Mg, Al",
+            c: "Be, Si",
+            d: "B, Si",
+          },
+          correct: "d",
+          explanation:
+            "<p>কর্ণ-সম্পর্ক (Diagonal Relationship) হলো পর্যায় সারণিতে দ্বিতীয় পর্যায়ের একটি মৌলের সাথে তৃতীয় পর্যায়ের পরবর্তী গ্রুপে অবস্থিত একটি মৌলের রাসায়নিক ধর্মের সাদৃশ্য। বোরন (B) এবং সিলিকন (Si) এর মধ্যে কর্ণ-সম্পর্ক বিদ্যমান। এদের উভয়ের অক্সাইড অম্লীয় এবং উভয়ই কিছু ক্ষেত্রে একই রকম রাসায়নিক আচরণ প্রদর্শন করে।</p>",
+        },
+        {
+          id: 66,
+          question:
+            "অম্লীয় দ্রবণে NO₂ আয়ন I⁻ আয়নকে জারিত করে I₂-এ রূপান্তরিত করে। NO₂ বিজারিত হয়ে কী হয়?",
+          options: {
+            a: "NO₂",
+            b: "NO",
+            c: "N₂O₅",
+            d: "NH₃",
+          },
+          correct: "b",
+          explanation:
+            "<p>যখন NO₂⁻ আয়ন (নাইট্রাইট আয়ন) জারক হিসেবে কাজ করে, তখন এটি নিজে বিজারিত হয়। অম্লীয় দ্রবণে, NO₂⁻ আয়ন I⁻ আয়নকে জারিত করে I₂ তে রূপান্তর করার সময়, NO₂⁻ নিজেই নাইট্রিক অক্সাইড (NO) এ বিজারিত হয়। এই বিক্রিয়ায় নাইট্রোজেনের জারণ সংখ্যা +3 থেকে +2 তে হ্রাস পায়।</p>",
+        },
+        {
+          id: 67,
+          question: "নিচের কোনটি অম্লীয় বা এসিডিক অক্সাইড নয়?",
+          options: {
+            a: "K₂O",
+            b: "NO₂",
+            c: "SO₂",
+            d: "P₂O₅",
+          },
+          correct: "a",
+          explanation:
+            "<p>পটাশিয়াম অক্সাইড (K₂O) একটি ক্ষারীয় অক্সাইড, অম্লীয় অক্সাইড নয়। এটি পানিতে দ্রবীভূত হয়ে শক্তিশালী ক্ষার পটাশিয়াম হাইড্রোক্সাইড (KOH) উৎপন্ন করে। নাইট্রোজেন ডাইঅক্সাইড (NO₂), সালফার ডাইঅক্সাইড (SO₂) এবং ফসফরাস পেন্টক্সাইড (P₂O₅) সবই অম্লীয় অক্সাইড।</p>",
+        },
+        {
+          id: 68,
+          question: "আকরিক উৎপন্নকারী মৌল সমূহকে কী বলে?",
+          options: {
+            a: "মুদ্রা ধাতু",
+            b: "অভিজাত ধাতু",
+            c: "চ্যালকোজেন",
+            d: "উপধাতু",
+          },
+          correct: "c",
+          explanation:
+            "<p>আকরিক উৎপন্নকারী মৌল সমূহকে চ্যালকোজেন (Chalcogens) বলা হয়। গ্রিক শব্দ 'chalkos' (আকরিক) এবং 'genes' (উৎপাদনকারী) থেকে এই নামটি এসেছে। এই গ্রুপে অক্সিজেন, সালফার, সেলেনিয়াম, টেলুরিয়াম এবং পোলোনিয়াম অন্তর্ভুক্ত, যা বিভিন্ন ধাতুর আকরিক গঠনে গুরুত্বপূর্ণ ভূমিকা পালন করে।</p>",
+        },
+        {
+          id: 69,
+          question: "Cl-এর ইলেকট্রন আসক্তি F থেকে বেশি, এর কারণ কোনটি?",
+          options: {
+            a: "F-এর ২য় স্তরের ইলেকট্রনের ঘনত্ব",
+            b: "Cl-এর ২য় স্তরের ইলেকট্রনের ঘনত্ব",
+            c: "F-এর আকার",
+            d: "Cl-এর আকার",
+          },
+          correct: "c",
+          explanation:
+            "<p>ফ্লোরিনের (F) ইলেকট্রন আসক্তি ক্লোরিনের (Cl) চেয়ে কম হওয়ার প্রধান কারণ হল ফ্লোরিনের অত্যন্ত ছোট আকার। ফ্লোরিনের দ্বিতীয় শক্তিস্তরে ইলেকট্রনগুলোর উচ্চ ঘনত্ব থাকে, যা নতুন আগত ইলেকট্রনকে বিকর্ষণ করে। এই বিকর্ষণের কারণে ফ্লোরিন ইলেকট্রন গ্রহণে কম প্রবণতা দেখায়, যদিও এটি সবচেয়ে বেশি তড়িৎঋণাত্মক মৌল। ক্লোরিনের আকার বড় হওয়ায় এই বিকর্ষণ প্রভাব কম হয়, ফলে এটি ফ্লোরিনের চেয়ে বেশি ইলেকট্রন আসক্তি প্রদর্শন করে।</p>",
+        },
+        {
+          id: 70,
+          question: "নিম্নের পারমাণবিক সংখ্যাযুক্ত মৌলের কোনটি p-ব্লকভুক্ত?",
+          options: {
+            a: "3",
+            b: "11",
+            c: "33",
+            d: "43",
+          },
+          correct: "c",
+          explanation:
+            "<p>পারমাণবিক সংখ্যা 33 হলো আর্সেনিকের (As)। এর ইলেকট্রন বিন্যাস [Ar] 3d¹⁰ 4s² 4p³। যেহেতু শেষ ইলেকট্রনটি p-অরবিটালে প্রবেশ করেছে, তাই আর্সেনিক p-ব্লকের মৌল। পারমাণবিক সংখ্যা 3 (লিথিয়াম) এবং 11 (সোডিয়াম) s-ব্লকের মৌল। পারমাণবিক সংখ্যা 43 (টেকনেটিয়াম) d-ব্লকের মৌল।</p>",
+        },
+        {
+          id: 71,
+          question: "আকরিক সৃষ্টিকারী মৌল-",
+          options: {
+            a: "Be, Ca, Sr",
+            b: "Se, S, Te",
+            c: "Al, Ga, In",
+            d: "Ge, Si, Sn",
+          },
+          correct: "b",
+          explanation:
+            "<p>সেলেনিয়াম (Se), সালফার (S) এবং টেলুরিয়াম (Te) পর্যায় সারণির গ্রুপ 16 এর সদস্য, যাদের চ্যালকোজেন বলা হয়। এই মৌলগুলো বিভিন্ন ধাতুর সাথে যুক্ত হয়ে সালফাইড, সেলেনাইড এবং টেলুরাইড আকরিক তৈরি করে। তাই তারা 'আকরিক সৃষ্টিকারী মৌল' হিসেবে পরিচিত।</p>",
+        },
+        {
+          id: 72,
+          question: "As-এ কতটি যোজন ইলেকট্রন আছে?",
+          options: {
+            a: "3",
+            b: "4",
+            c: "5",
+            d: "6",
+          },
+          correct: "c",
+          explanation:
+            "<p>আর্সেনিক (As) পর্যায় সারণির গ্রুপ 15 এর মৌল। এর ইলেকট্রন বিন্যাস [Ar] 3d¹⁰ 4s² 4p³। এর সর্ববহিঃস্থ শক্তিস্তরে (4s² 4p³) মোট 2+3=5টি যোজন ইলেকট্রন থাকে।</p>",
+        },
+        {
+          id: 73,
+          question: "পর্যায় সারণির কোন ব্লকে অধাতুকে স্থান দেওয়া হয়েছে?",
+          options: {
+            a: "s-block",
+            b: "p-block",
+            c: "d-block",
+            d: "f-block",
+          },
+          correct: "b",
+          explanation:
+            "<p>পর্যায় সারণির p-ব্লকে অধাতুগুলোকে স্থান দেওয়া হয়েছে। এই ব্লকে গ্রুপ 13 থেকে গ্রুপ 18 পর্যন্ত মৌলগুলো অন্তর্ভুক্ত, যার মধ্যে বেশিরভাগই অধাতু (যেমন কার্বন, নাইট্রোজেন, অক্সিজেন, ফ্লোরিন, ক্লোরিন ইত্যাদি), কিছু অপধাতু এবং কিছু ধাতুও রয়েছে।</p>",
+        },
+        {
+          id: 74,
+          question: "অষ্টক সম্প্রসারণের উদাহরণ কোনটি?",
+          options: {
+            a: "BeCl₂",
+            b: "PCl₅",
+            c: "BCl₃",
+            d: "Cl₂",
+          },
+          correct: "b",
+          explanation:
+            "<p>অষ্টক সম্প্রসারণ (Octet Expansion) হলো এমন একটি ঘটনা যেখানে কেন্দ্রীয় পরমাণু তার যোজ্যতা স্তরে 8টির বেশি ইলেকট্রন ধারণ করে। ফসফরাস পেন্টাক্লোরাইড (PCl₅) এ ফসফরাসের যোজ্যতা স্তরে 10টি ইলেকট্রন থাকে (5টি বন্ধন জোড়), যা অষ্টক সম্প্রসারণের একটি উদাহরণ। এর কারণ হল ফসফরাসের ফাঁকা d-অরবিটালের উপস্থিতি। BeCl₂ এবং BCl₃ অষ্টক অসম্পূর্ণ যৌগ। Cl₂ তে প্রতিটি ক্লোরিন পরমাণুর অষ্টক পূর্ণ থাকে।</p>",
+        },
+        {
+          id: 75,
+          question: "NO অণুর বন্ধনক্রম কত?",
+          options: {
+            a: "1",
+            b: "2",
+            c: "2.5",
+            d: "3",
+          },
+          correct: "c",
+          explanation:
+            "<p>নাইট্রিক অক্সাইড (NO) অণুর বন্ধনক্রম 2.5। এর কারণ হল, NO একটি বিজোড় ইলেকট্রন অণু। আণবিক অরবিটাল তত্ত্বে (Molecular Orbital Theory), এর বন্ধনক্রম গণনা করা হয় (বন্ধনকারী ইলেকট্রনের সংখ্যা - প্রতিবন্ধনকারী ইলেকট্রনের সংখ্যা) / 2 সূত্র দ্বারা। NO এর ক্ষেত্রে, এটি 2.5 হয়।</p>",
+        },
+        {
+          id: 76,
+          question: "নিচের কোনটি অধিক শক্তিশালী ক্ষার?",
+          options: {
+            a: "NH₃",
+            b: "CH₃CH₂NH₂",
+            c: "C₆H₅NH₂",
+            d: "N₂",
+          },
+          correct: "b",
+          explanation:
+            "<p>সাধারণত, অ্যামিনগুলোর ক্ষারকীয় ধর্ম নাইট্রোজেনের মুক্তজোড় ইলেকট্রনের সহজলভ্যতার উপর নির্ভর করে। অ্যামোনিয়া (NH₃) একটি দুর্বল ক্ষার। ইথাইল অ্যামিন (CH₃CH₂NH₂) একটি প্রাথমিক অ্যামিন, যেখানে ইথাইল গ্রুপ (+I প্রভাব) নাইট্রোজেনের ইলেকট্রন ঘনত্ব বৃদ্ধি করে, ফলে এর ক্ষারকীয় ধর্ম অ্যামোনিয়ার চেয়ে বেশি হয়। অ্যানিলিন (C₆H₅NH₂) একটি দুর্বল ক্ষার কারণ এর নাইট্রোজেনের মুক্তজোড় ইলেকট্রন বেনজিন বলয়ে রেজোনেন্সে অংশ নেয়। N₂ একটি নিষ্ক্রিয় গ্যাস।</p>",
+        },
+        {
+          id: 77,
+          question: "নিম্নের কোন যৌগটি অম্লীয়?",
+          options: {
+            a: "BeCl₂",
+            b: "FeCl₃",
+            c: "MgO",
+            d: "Na₂O",
+          },
+          correct: "b",
+          explanation:
+            "<p>ফেরিক ক্লোরাইড (FeCl₃) একটি লুইস অ্যাসিড, অর্থাৎ এটি ইলেকট্রন জোড় গ্রহণ করতে পারে। এটি জলীয় দ্রবণে আর্দ্র বিশ্লেষিত হয়ে অম্লীয় দ্রবণ তৈরি করে। BeCl₂ একটি লুইস অ্যাসিড হলেও, FeCl₃ এর চেয়ে দুর্বল। MgO এবং Na₂O উভয়ই ক্ষারীয় অক্সাইড।</p>",
+        },
+        {
+          id: 78,
+          question: "কোনটি তীব্র ক্ষারধর্মী অক্সাইড?",
+          options: {
+            a: "Na₂O",
+            b: "ZnO",
+            c: "MgO",
+            d: "CO₂",
+          },
+          correct: "a",
+          explanation:
+            "<p>সোডিয়াম অক্সাইড (Na₂O) একটি তীব্র ক্ষারধর্মী অক্সাইড। এটি পর্যায় সারণির গ্রুপ 1 এর মৌলের অক্সাইড এবং পানিতে দ্রবীভূত হয়ে শক্তিশালী ক্ষার সোডিয়াম হাইড্রোক্সাইড (NaOH) উৎপন্ন করে। জিঙ্ক অক্সাইড (ZnO) উভধর্মী, ম্যাগনেসিয়াম অক্সাইড (MgO) দুর্বল ক্ষারীয় এবং কার্বন ডাইঅক্সাইড (CO₂) অম্লীয়।</p>",
+        },
+        {
+          id: 79,
+          question: "কোনটি অম্লীয় জলীয় দ্রবণ তৈরি করে?",
+          options: {
+            a: "CCl₄",
+            b: "XeF₂",
+            c: "H₂O",
+            d: "NF₃",
+          },
+          correct: "b",
+          explanation:
+            "<p>জেনন ডাইফ্লুরাইড (XeF₂) পানিতে আর্দ্র বিশ্লেষিত হয়ে অম্লীয় দ্রবণ তৈরি করে, কারণ এটি জেনন, হাইড্রোজেন ফ্লোরাইড এবং অক্সিজেন উৎপন্ন করে। CCl₄ আর্দ্র বিশ্লেষিত হয় না। H₂O নিরপেক্ষ। NF₃ পানিতে আর্দ্র বিশ্লেষিত হলেও খুব কম পরিমাণে হয়।</p>",
+        },
+        {
+          id: 80,
+          question: "Na₂CO₃-এর জলীয় দ্রবণ কোন প্রকৃতির?",
+          options: {
+            a: "নিরপেক্ষ",
+            b: "এসিডিক",
+            c: "উভয়ধর্মী",
+            d: "ক্ষারীয়",
+          },
+          correct: "d",
+          explanation:
+            "<p>সোডিয়াম কার্বনেট (Na₂CO₃) একটি শক্তিশালী ক্ষার (NaOH) এবং একটি দুর্বল অ্যাসিড (H₂CO₃) এর লবণ। যখন এটি পানিতে দ্রবীভূত হয়, তখন কার্বনেট আয়ন (CO₃²⁻) পানির সাথে বিক্রিয়া করে হাইড্রোক্সিল আয়ন (OH⁻) উৎপন্ন করে, যা দ্রবণকে ক্ষারীয় করে তোলে। Na₂CO₃ + 2H₂O ⇌ 2NaOH + H₂CO₃।</p>",
+        },
+        {
+          id: 81,
+          question: "সর্বোচ্চ আয়নীকরণ বিভববিশিষ্ট নিষ্ক্রিয় গ্যাস মৌলটি হলো-",
+          options: {
+            a: "He",
+            b: "Ne",
+            c: "Ar",
+            d: "Kr",
+          },
+          correct: "a",
+          explanation:
+            "<p>নিষ্ক্রিয় গ্যাসগুলোর মধ্যে হিলিয়াম (He) এর আকার সবচেয়ে ছোট এবং এর নিউক্লিয়াস ইলেকট্রনগুলোকে সবচেয়ে দৃঢ়ভাবে আকর্ষণ করে। এর ফলস্বরূপ, হিলিয়ামের আয়নীকরণ বিভব সবচেয়ে বেশি। পর্যায় সারণিতে একটি গ্রুপ বরাবর উপর থেকে নিচে গেলে আয়নীকরণ বিভব হ্রাস পায়।</p>",
+        },
+        {
+          id: 82,
+          question: "HClO₄-এ Cl-এর জারণ সংখ্যা কত?",
+          options: {
+            a: "+8",
+            b: "+7",
+            c: "+9",
+            d: "+2",
+          },
+          correct: "b",
+          explanation:
+            "<p>পারক্লোরিক অ্যাসিড (HClO₄) এ ক্লোরিনের জারণ সংখ্যা নির্ণয় করতে হলে, আমরা জানি হাইড্রোজেনের জারণ সংখ্যা +1 এবং অক্সিজেনের জারণ সংখ্যা -2। ধরি, ক্লোরিনের জারণ সংখ্যা x। তাহলে, 1 + x + 4(-2) = 0। 1 + x - 8 = 0। x - 7 = 0। x = +7। সুতরাং, HClO₄ এ ক্লোরিনের জারণ সংখ্যা +7।</p>",
+        },
+        {
+          id: 83,
+          question:
+            "নিচের কোন অণুটির কেন্দ্রীয় পরমাণু অষ্টক নিয়ম মেনে চলে না?",
+          options: {
+            a: "N₂O₅",
+            b: "Na₂O",
+            c: "MgO",
+            d: "SiO₂",
+          },
+          correct: "a",
+          explanation:
+            "<p>নাইট্রোজেন পেন্টক্সাইড (N₂O₅) এর কেন্দ্রীয় পরমাণু নাইট্রোজেন অষ্টক নিয়ম মেনে চলে না, কারণ এটি 5টি বন্ধন তৈরি করে, যার ফলে এর যোজ্যতা স্তরে 10টি ইলেকট্রন থাকে (অষ্টক সম্প্রসারণ)। Na₂O, MgO এবং SiO₂ এর কেন্দ্রীয় পরমাণু সাধারণত অষ্টক নিয়ম মেনে চলে।</p>",
+        },
+        {
+          id: 84,
+          question: "নিম্নের কোনটি সর্বাধিক সংখ্যক যৌগ গঠন করে?",
+          options: {
+            a: "Argon",
+            b: "Krypton",
+            c: "Xenon",
+            d: "Radon",
+          },
+          correct: "c",
+          explanation:
+            "<p>নিষ্ক্রিয় গ্যাসগুলোর মধ্যে জেনন (Xenon) সর্বাধিক সংখ্যক যৌগ গঠন করে। এটি ফ্লোরিন এবং অক্সিজেনের মতো উচ্চ তড়িৎঋণাত্মক মৌলগুলোর সাথে যৌগ গঠন করতে পারে (যেমন XeF₂, XeF₄, XeF₆, XeO₃)। এর কারণ হল, জেননের আকার তুলনামূলকভাবে বড়, ফলে এর যোজ্যতা ইলেকট্রনগুলো নিউক্লিয়াস থেকে দূরে থাকে এবং সহজেই উত্তেজিত হয়ে রাসায়নিক বন্ধন তৈরি করতে পারে।</p>",
+        },
+        {
+          id: 85,
+          question:
+            "PCl₅ গঠন সম্ভব, কিন্তু NCl₅ গঠন সম্ভব নয়। কারণ ফসফরাসের তুলনায় নাইট্রোজেনে-",
+          options: {
+            a: "আয়নিকরণ শক্তি বেশি",
+            b: "তড়িৎঋণাত্মকতা বেশি",
+            c: "পারমাণবিক ব্যাসার্ধ কম ও d অরবিটালের অনুপস্থিতি",
+            d: "পারমাণবিক ব্যাসার্ধ বেশি",
+          },
+          correct: "c",
+          explanation:
+            "<p>ফসফরাস পেন্টাক্লোরাইড (PCl₅) গঠিত হতে পারে, কিন্তু নাইট্রোজেন পেন্টাক্লোরাইড (NCl₅) গঠিত হতে পারে না। এর প্রধান কারণ হল নাইট্রোজেনের পারমাণবিক ব্যাসার্ধ কম এবং এর যোজ্যতা স্তরে (2s² 2p³) কোনো ফাঁকা d-অরবিটাল নেই। এর ফলে নাইট্রোজেন তার অষ্টক সম্প্রসারণ করতে পারে না এবং সর্বোচ্চ 3টি সমযোজী বন্ধন তৈরি করতে পারে (যেমন NCl₃)। অন্যদিকে, ফসফরাসের (ইলেকট্রন বিন্যাস [Ne] 3s² 3p³ 3d⁰) ফাঁকা 3d-অরবিটাল থাকায় এটি তার যোজ্যতা স্তর সম্প্রসারিত করে 5টি বন্ধন তৈরি করতে পারে </p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                  <label class="option" data-option="${option}">
+                                    <div class="circle">${option}</div>
+                                    <span class="option-text">${question.options[option]}</span>
+                                  </label>
+                                `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                     <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                     <div class="explanation-content">
+                                       <div class="explanation-label">ব্যাখ্যা:</div>
+                                       ${question.explanation}
+                                     </div>
+                                   </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                <p class="question-label">${index + 1}. ${
+            question.question
+          }</p>
+                                <div class="options">
+                                  ${optionsHTML}
+                                </div>
+                                ${explanationHTML}
+                              `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
